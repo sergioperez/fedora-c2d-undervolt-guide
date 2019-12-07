@@ -68,6 +68,45 @@ tar zxvf p95v*.tar.gz
 
 ## 11 - Run the script as root :)
 
-## 12 - Make the new voltages permanent
+## 12 - Set the new voltages permanently
 
-**TODO (W.I.P guide) **
+First of all, we will check that the phc_vids values are stored at the following file
+
+```
+cat /sys/devices/system/cpu/cpu0/cpufreq/phc_vids
+```
+
+We will create a script to set these voltages:
+
+```bash
+VIDS=$(cat /sys/devices/system/cpu/cpu0/cpufreq/phc_vids)
+cat <<EOT >> /usr/bin/set_vids.sh
+#!/usr/bin/bash
+echo ${VOLTAGES} > /sys/devices/system/cpu/cpu*/cpufreq/phc_vids
+EOT
+
+chmod +x /usr/sbin/set_vids.sh
+```
+
+At the end, we will create a systemd unit to set the vids on boot.
+
+```
+cat <<EOT > /etc/systemd/system/set-vids.service
+[Unit]
+Description=Disable cdrom
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/set_vids.sh
+
+[Install]
+WantedBy=multi-user.target
+EOT
+```
+
+The module phc-intel needs acpi-cpufreq not loaded to work. It can be blacklisted as follows:
+
+```
+echo "blacklist acpi_cpufreq" > /etc/modprobe.d/blacklist-acpi-cpufreq.conf
+```
+
